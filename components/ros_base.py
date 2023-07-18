@@ -1,5 +1,5 @@
 from threading import Lock, Thread
-import rclpy
+from ros_utils import multiThreadedExecutor
 import viam
 from viam.logging import getLogger
 from typing import Any, ClassVar, Dict, Mapping, Optional, Sequence, Tuple
@@ -32,7 +32,6 @@ class RosBaseNode(Node):
         self.create_timer(1, self.timer_callback)
 
     def timer_callback(self):
-        logger.info(f'timer_callback: {self.twist_msg}')
         self.get_logger().info(f'{self.get_name()} -> {self.twist_msg}')
         self.publisher.publish(self.twist_msg)
 
@@ -53,18 +52,14 @@ class RosBase(Base, Reconfigurable):
         base = cls(config.name)
         base.ros_node = None
         base.base_thread = None
-        logger.info('new -> attempting reconfigure')
         base.reconfigure(config, dependencies)
-        logger.info('new -> attempting to return base')
         return base
 
     @classmethod
     def validate_config(cls, config: ComponentConfig) -> Sequence[str]:
-        logger.info('validate_config -> started')
         topic = config.attributes.fields['ros_topic'].string_value
         if topic == '':
             raise Exception('ros_topic required')
-        logger.info(f'validate_config -> {topic}')
         return []
 
     def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
@@ -75,9 +70,9 @@ class RosBase(Base, Reconfigurable):
         #if self.base_thread:
         #    self.base_thread.join()
         self.ros_node = RosBaseNode(self.ros_topic)
-        rclpy.spin_once(self.ros_node)
-        #self.base_thread = Thread(target=rclpy.spin, args=(self.ros_node, ), daemon=True)
-        #self.base_thread.start()
+
+        # TODO: dumb bug need to create one instance of this
+        multiThreadedExecutor.add_node(self.ros_node)
         self.is_base_moving = False
 
     async def move_straight(self, distance: int, velocity: float, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None, **kwargs):
