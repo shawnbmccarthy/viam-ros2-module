@@ -1,6 +1,6 @@
 from threading import Lock, Thread
-from ros_utils import multiThreadedExecutor
 import viam
+from utils import RclpyNodeManager
 from viam.logging import getLogger
 from typing import Any, ClassVar, Dict, Mapping, Optional, Sequence, Tuple
 from typing_extensions import Self
@@ -29,15 +29,12 @@ class RosBaseNode(Node):
         self.lock = Lock()
         self.twist_msg = Twist()
         self.publisher = self.create_publisher(Twist, base_topic, 10)
-        self.create_timer(1, self.timer_callback)
+        self.create_timer(0.2, self.timer_callback)
+        logger.info('created node')
 
     def timer_callback(self):
         self.get_logger().info(f'{self.get_name()} -> {self.twist_msg}')
         self.publisher.publish(self.twist_msg)
-
-    def destroy(self):
-        self.destroy_publisher(self.base_pub)
-        self.destroy_node()
 
 
 class RosBase(Base, Reconfigurable):
@@ -65,14 +62,9 @@ class RosBase(Base, Reconfigurable):
     def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
         self.ros_topic = config.attributes.fields['ros_topic'].string_value
         self.is_base_moving = False
-        #if self.ros_node != None:
-        #    self.ros_node.destroy()
-        #if self.base_thread:
-        #    self.base_thread.join()
         self.ros_node = RosBaseNode(self.ros_topic)
-
-        # TODO: dumb bug need to create one instance of this
-        multiThreadedExecutor.add_node(self.ros_node)
+        rcl_mgr = RclpyNodeManager.get_instance()
+        rcl_mgr.spin_and_add_node(self.ros_node)
         self.is_base_moving = False
 
     async def move_straight(self, distance: int, velocity: float, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None, **kwargs):
