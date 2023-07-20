@@ -1,4 +1,5 @@
 from threading import Lock, Thread
+import rclpy
 import viam
 from utils import RclpyNodeManager
 from viam.logging import getLogger
@@ -30,10 +31,10 @@ class RosBaseNode(Node):
         self.twist_msg = Twist()
         self.publisher = self.create_publisher(Twist, base_topic, 10)
         self.create_timer(0.2, self.timer_callback)
-        logger.info('created node')
+        self.get_logger().info('RosBaseNode(): created node')
 
     def timer_callback(self):
-        self.get_logger().info(f'{self.get_name()} -> {self.twist_msg}')
+        self.get_logger().info(f'timer_callback(): {self.get_name()} -> {self.twist_msg}')
         self.publisher.publish(self.twist_msg)
 
 
@@ -63,6 +64,8 @@ class RosBase(Base, Reconfigurable):
         self.ros_topic = config.attributes.fields['ros_topic'].string_value
         self.is_base_moving = False
         self.ros_node = RosBaseNode(self.ros_topic)
+        #t = Thread(target=rclpy.spin, args=(self.ros_node, ), daemon=True)
+        #t.start()
         rcl_mgr = RclpyNodeManager.get_instance()
         rcl_mgr.spin_and_add_node(self.ros_node)
         self.is_base_moving = False
