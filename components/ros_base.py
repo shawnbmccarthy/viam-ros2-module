@@ -64,6 +64,9 @@ class RosBase(Base, Reconfigurable):
         self.ros_topic = config.attributes.fields['ros_topic'].string_value
         self.is_base_moving = False
         self.ros_node = RosBaseNode(self.ros_topic)
+        # TODO: test if this will properly shutdown our ros node
+        #       also need to validate removing node during reconfigure
+        #       there is a hang which appears
         #t = Thread(target=rclpy.spin, args=(self.ros_node, ), daemon=True)
         #t.start()
         rcl_mgr = RclpyNodeManager.get_instance()
