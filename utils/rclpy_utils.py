@@ -2,6 +2,7 @@ import rclpy
 from threading import Thread
 from viam.logging import getLogger
 
+
 class RclpyNodeManager:
     mgr = None
 
@@ -28,11 +29,14 @@ class RclpyNodeManager:
 
     def remove_node(self, node):
         ex = rclpy.get_global_executor()
+        removed = False
         for i in self.spinning_nodes:
             if i['node_name'] == node.get_name():
                 self.logger.info(f'RclpyNodeManager: attempting to remove node: {node_name}')
                 ex.remove_node(node)
                 i['thread'].join()
+                removed = True
+        self.logger.info(f'RclpyNodeManager: Found & removed node: {removed}')
 
     def shutdown(self):
         self.logger.info(f'RclpyNodeManager: attempting to shutdown')

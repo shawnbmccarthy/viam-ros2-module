@@ -28,6 +28,7 @@ async def main(addr: str) -> None:
         rclpy_mgr = RclpyNodeManager.get_instance()
         m = Module(addr)
         m.add_model_from_registry(Base.SUBTYPE, RosBase.MODEL)
+        m.add_model_from_registry(Base.SUBTYPE, RosBase.MODEL)
         await m.start()
     finally:
         rclpy_mgr.shutdown()

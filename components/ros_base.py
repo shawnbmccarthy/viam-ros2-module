@@ -20,13 +20,8 @@ logger = getLogger(__name__)
 
 
 class RosBaseNode(Node):
-    def __init__(self, base_topic):
-        super().__init__('ros_base_node', enable_rosout=True)
-        self.base_pub = self.create_publisher(
-            Twist,
-            base_topic,
-            10
-        )
+    def __init__(self, base_topic, node_name):
+        super().__init__(node_name, enable_rosout=True)
         self.lock = Lock()
         self.twist_msg = Twist()
         self.publisher = self.create_publisher(Twist, base_topic, 10)
@@ -34,7 +29,7 @@ class RosBaseNode(Node):
         self.get_logger().info('RosBaseNode(): created node')
 
     def timer_callback(self):
-        self.get_logger().info(f'timer_callback(): {self.get_name()} -> {self.twist_msg}')
+        self.get_logger().debug(f'timer_callback(): {self.get_name()} -> {self.twist_msg}')
         self.publisher.publish(self.twist_msg)
 
 
@@ -43,6 +38,7 @@ class RosBase(Base, Reconfigurable):
     ros_topic: str
     is_base_moving: bool
     ros_node: Node
+    node_name: str
     base_thread: Thread
 
     @classmethod
@@ -62,14 +58,17 @@ class RosBase(Base, Reconfigurable):
 
     def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
         self.ros_topic = config.attributes.fields['ros_topic'].string_value
+        self.node_name = config.attributes.fields['ros_node_name'].string_value
+
+        if self.node_name == '' or self.node_name == None:
+            self.node_name = 'VIAM_ROS_NODE'
+
         self.is_base_moving = False
-        self.ros_node = RosBaseNode(self.ros_topic)
-        # TODO: test if this will properly shutdown our ros node
-        #       also need to validate removing node during reconfigure
-        #       there is a hang which appears
-        #t = Thread(target=rclpy.spin, args=(self.ros_node, ), daemon=True)
-        #t.start()
+        self.ros_node = RosBaseNode(self.ros_topic, self.node_name)
+        # TODO: validate reconfigure works 
+        #       issue around node name (what happens when we change the node name?)
         rcl_mgr = RclpyNodeManager.get_instance()
+        rcl_mgr.remove_node(self.ros_node)
         rcl_mgr.spin_and_add_node(self.ros_node)
         self.is_base_moving = False
 
@@ -91,7 +90,7 @@ class RosBase(Base, Reconfigurable):
             self.ros_node.twist_msg.linear.x = linear.y
             self.ros_node.twist_msg.angular.z = angular.z
             self.is_base_moving = True
-        self.ros_node.get_logger().info(f'set_power: done')
+        self.ros_node.get_logger().info(f'set_power: {self.ros_node.twist_msg}')
 
     async def set_velocity(
             self,
@@ -106,7 +105,7 @@ class RosBase(Base, Reconfigurable):
             self.ros_node.twist_msg.linear.x = linear.y
             self.ros_node.twist_msg.angular.z = angular.z
             self.is_base_moving = True
-        self.ros_node.get_logger().info(f'set_velocity: done')
+        self.ros_node.get_logger().info(f'set_velocity: {self.ros_node.twist_msg}')
 
     async def stop(
             self,
