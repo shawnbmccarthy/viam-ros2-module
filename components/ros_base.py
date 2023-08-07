@@ -26,7 +26,7 @@ class RosBaseNode(Node):
         self.twist_msg = Twist()
         self.publisher = self.create_publisher(Twist, base_topic, 10)
         self.create_timer(0.2, self.timer_callback)
-        self.get_logger().info('RosBaseNode(): created node')
+        self.get_logger().debug('RosBaseNode(): created node')
 
     def timer_callback(self):
         self.get_logger().debug(f'timer_callback(): {self.get_name()} -> {self.twist_msg}')
@@ -61,7 +61,7 @@ class RosBase(Base, Reconfigurable):
         self.node_name = config.attributes.fields['ros_node_name'].string_value
 
         if self.node_name == '' or self.node_name == None:
-            self.node_name = 'VIAM_ROS_NODE'
+            self.node_name = 'VIAM_ROS_BASE_NODE'
 
         self.is_base_moving = False
         self.ros_node = RosBaseNode(self.ros_topic, self.node_name)
@@ -90,7 +90,7 @@ class RosBase(Base, Reconfigurable):
             self.ros_node.twist_msg.linear.x = linear.y
             self.ros_node.twist_msg.angular.z = angular.z
             self.is_base_moving = True
-        self.ros_node.get_logger().info(f'set_power: {self.ros_node.twist_msg}')
+        self.ros_node.get_logger().debug(f'set_power: {self.ros_node.twist_msg}')
 
     async def set_velocity(
             self,
@@ -105,7 +105,7 @@ class RosBase(Base, Reconfigurable):
             self.ros_node.twist_msg.linear.x = linear.y
             self.ros_node.twist_msg.angular.z = angular.z
             self.is_base_moving = True
-        self.ros_node.get_logger().info(f'set_velocity: {self.ros_node.twist_msg}')
+        self.ros_node.get_logger().debug(f'set_velocity: {self.ros_node.twist_msg}')
 
     async def stop(
             self,
@@ -117,7 +117,7 @@ class RosBase(Base, Reconfigurable):
             self.ros_node.twist_msg.linear.x = 0.0
             self.ros_node.twist_msg.angular.z = 0.0
             self.is_base_moving = False
-        self.ros_node.get_logger().info(f'stop: done')
+        self.ros_node.get_logger().debug(f'stop: done')
 
     async def is_moving(self):
         return self.is_base_moving

@@ -1,11 +1,13 @@
-from threading import Lock, Thread
+import sys
+import logging
 import rclpy
 import viam
-from utils import RclpyNodeManager
+from threading import Lock, Thread
+from utils import quaternion_to_orientation, RclpyNodeManager
 from viam.logging import getLogger
 from typing import Any, ClassVar, Dict, Mapping, Optional, Sequence, Tuple
 from typing_extensions import Self
-from viam.components.movement_sensor import MovementSensor
+from viam.components.movement_sensor import MovementSensor, Orientation, Vector3
 from viam.module.types import Reconfigurable
 from viam.proto.app.robot import ComponentConfig
 from viam.proto.common import ResourceName
@@ -14,21 +16,37 @@ from viam.resource.registry import Registry, ResourceCreatorRegistration
 from viam.resource.types import Model, ModelFamily
 from viam.utils import ValueTypes
 from rclpy.node import Node
-from geometry_msgs.msg import Imu
-
-logger = getLogger(__name__)
+from sensor_msgs.msg import Imu
 
 
 class RosImuNode(Node):
     def __init__(self, imu_topic, node_name):
         super().__init__(node_name, enable_rosout=True)
         self.lock = Lock()
-        self.subscriber = self.create_subscription(Imu, imu_topic, self.listener_callback, 10)
-        self.get_logger().info('RosImuNode(): created node')
+        qos_policy = rclpy.qos.QoSProfile(
+            reliability=rclpy.qos.ReliabilityPolicy.BEST_EFFORT,
+            history=rclpy.qos.HistoryPolicy.KEEP_LAST,
+            depth=1
+        )
+        self.subscriber = self.create_subscription(Imu, imu_topic, self.subscriber_callback, qos_profile=qos_policy)
+        self.msg = None
 
-    def listener_callback(self, msg):
-        self.get_logger().debug(f'listener_callback(): {self.get_name()} -> {msg.data}')
+    def subscriber_callback(self, msg):
+        self.get_logger().debug(f'listener_callback(): {self.get_name()} -> {msg}')
+        with self.lock:
+            self.msg = msg
 
+
+class RosImuProperties(MovementSensor.Properties):
+    def __init__(self):
+        super().__init__(
+            linear_acceleration_supported=True,
+            angular_velocity_supported=True,
+            orientation_supported=True,
+            position_supported=False,
+            compass_heading_supported=False,
+            linear_velocity_supported=False
+        )
 
 class RosImu(MovementSensor, Reconfigurable):
     MODEL: ClassVar[Model] = Model(ModelFamily('viamlabs', 'ros2'), 'imu')
@@ -36,12 +54,16 @@ class RosImu(MovementSensor, Reconfigurable):
     ros_node: Node
     node_name: str
     base_thread: Thread
+    logger: logging.Logger
+    props: RosImuProperties
 
     @classmethod
     def new(cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
         base = cls(config.name)
         base.ros_node = None
         base.base_thread = None
+        base.logger = getLogger(f'{__name__}.{base.__class__.__name__}')
+        base.props = RosImuProperties()
         base.reconfigure(config, dependencies)
         return base
 
@@ -59,13 +81,10 @@ class RosImu(MovementSensor, Reconfigurable):
         if self.node_name == '' or self.node_name == None:
             self.node_name = 'VIAM_ROS_IMU_NODE'
 
-        self.ros_node = RosBaseNode(self.ros_topic, self.node_name)
-        # TODO: validate reconfigure works 
-        #       issue around node name (what happens when we change the node name?)
+        self.ros_node = RosImuNode(self.ros_topic, self.node_name)
         rcl_mgr = RclpyNodeManager.get_instance()
         rcl_mgr.remove_node(self.ros_node)
         rcl_mgr.spin_and_add_node(self.ros_node)
-        self.is_base_moving = False
 
     async def get_position(
         self,
@@ -74,6 +93,7 @@ class RosImu(MovementSensor, Reconfigurable):
         timeout: Optional[float] = None,
         **kwargs
     ) -> Tuple[viam.components.movement_sensor.GeoPoint, float]:
+        self.logger.warn('get_position: not implemented')
         raise NotImplementedError()
 
     async def get_linear_velocity(
@@ -83,6 +103,7 @@ class RosImu(MovementSensor, Reconfigurable):
         timeout: Optional[float] = None,
         **kwargs
     ) -> viam.components.movement_sensor.Vector3:
+        self.logger.warn('get_linear_velocity: not implemented')
         raise NotImplementedError()
 
     async def get_angular_velocity(
@@ -92,7 +113,10 @@ class RosImu(MovementSensor, Reconfigurable):
         timeout: Optional[float] = None,
         **kwargs
     ) -> viam.components.movement_sensor.Vector3:
-        raise NotImplementedError()
+        if self.ros_node.msg == None:
+            raise Exception("ros imu message not ready")
+        av = self.ros_node.msg.angular_velocity
+        return Vector3(x=av.x, y=av.y, z=av.z)
 
 
     async def get_linear_acceleration(
@@ -102,7 +126,10 @@ class RosImu(MovementSensor, Reconfigurable):
         timeout: Optional[float] = None,
         **kwargs
     ) -> viam.components.movement_sensor.Vector3:
-        raise NotImplementedError()
+        if self.ros_node.msg == None:
+            raise Exception("ros imu message not ready")
+        la = self.ros_node.msg.linear_acceleration
+        return Vector3(x=la.x, y=la.y, z=la.z)
 
     async def get_compass_heading(
         self,
@@ -111,6 +138,7 @@ class RosImu(MovementSensor, Reconfigurable):
         timeout: Optional[float] = None,
         **kwargs
     ) -> float:
+        self.logger.warn(f'get_compass_heading: not implemented')
         raise NotImplementedError()
 
     async def get_orientation(
@@ -120,7 +148,10 @@ class RosImu(MovementSensor, Reconfigurable):
         timeout: Optional[float] = None,
         **kwargs
     ) -> viam.components.movement_sensor.Orientation:
-        raise NotImplementedError()
+        if self.ros_node.msg == None:
+            raise Exception("ros imu message not ready")
+        o = self.ros_node.msg.orientation
+        return quaternion_to_orientation(o.w, o.x, o.y, o.z)
 
     async def get_accuracy(
         self,
@@ -132,7 +163,7 @@ class RosImu(MovementSensor, Reconfigurable):
         raise NotImplementedError()
 
     async def get_properties(self, *, timeout: Optional[float] = None, **kwargs):
-        raise NotImplementedError()
+        return self.props
 
     async def do_command(
             self,
@@ -142,10 +173,11 @@ class RosImu(MovementSensor, Reconfigurable):
             **kwargs
     ):
         raise NotImplementedError()
+        
 
 
 Registry.register_resource_creator(
-    Base.SUBTYPE,
-    RosBase.MODEL,
+    MovementSensor.SUBTYPE,
+    RosImu.MODEL,
     ResourceCreatorRegistration(RosImu.new, RosImu.validate_config)
 )

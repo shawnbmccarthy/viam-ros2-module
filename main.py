@@ -6,9 +6,10 @@ import signal
 import sys
 
 from viam.components.base import Base
+from viam.components.movement_sensor import MovementSensor
 from viam.logging import getLogger
 from viam.module.module import Module
-from components import RosBase
+from components import RosBase, RosImu
 from utils import RclpyNodeManager
 
 logger = getLogger(__name__)
@@ -28,7 +29,7 @@ async def main(addr: str) -> None:
         rclpy_mgr = RclpyNodeManager.get_instance()
         m = Module(addr)
         m.add_model_from_registry(Base.SUBTYPE, RosBase.MODEL)
-        m.add_model_from_registry(Base.SUBTYPE, RosBase.MODEL)
+        m.add_model_from_registry(MovementSensor.SUBTYPE, RosImu.MODEL)
         await m.start()
     finally:
         rclpy_mgr.shutdown()
