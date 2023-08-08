@@ -1,4 +1,4 @@
-from threading import Lock, Thread
+from threading import Lock
 import rclpy
 import viam
 from utils import RclpyNodeManager
@@ -39,13 +39,11 @@ class RosBase(Base, Reconfigurable):
     is_base_moving: bool
     ros_node: Node
     node_name: str
-    base_thread: Thread
 
     @classmethod
     def new(cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
         base = cls(config.name)
         base.ros_node = None
-        base.base_thread = None
         base.reconfigure(config, dependencies)
         return base
 

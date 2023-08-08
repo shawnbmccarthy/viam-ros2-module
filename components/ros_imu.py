@@ -2,7 +2,7 @@ import sys
 import logging
 import rclpy
 import viam
-from threading import Lock, Thread
+from threading import Lock
 from utils import quaternion_to_orientation, RclpyNodeManager
 from viam.logging import getLogger
 from typing import Any, ClassVar, Dict, Mapping, Optional, Sequence, Tuple
@@ -53,7 +53,6 @@ class RosImu(MovementSensor, Reconfigurable):
     ros_topic: str
     ros_node: Node
     node_name: str
-    base_thread: Thread
     logger: logging.Logger
     props: RosImuProperties
 
@@ -61,7 +60,6 @@ class RosImu(MovementSensor, Reconfigurable):
     def new(cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
         base = cls(config.name)
         base.ros_node = None
-        base.base_thread = None
         base.logger = getLogger(f'{__name__}.{base.__class__.__name__}')
         base.props = RosImuProperties()
         base.reconfigure(config, dependencies)
