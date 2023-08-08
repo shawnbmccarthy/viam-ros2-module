@@ -16,7 +16,7 @@ from viam.resource.registry import Registry, ResourceCreatorRegistration
 from viam.resource.types import Model, ModelFamily
 from viam.utils import ValueTypes
 from rclpy.node import Node
-from irobot_create_msgs.msg import HazardDetection
+from irobot_create_msgs.msg import HazardDetectionVector
 
 
 
@@ -30,7 +30,7 @@ class RosIrobotHazardNode(Node):
             depth=1
         )
         self.subscriber = self.create_subscription(
-            HazardDetection,
+            HazardDetectionVector,
             hazard_topic,
             self.subscriber_callback,
             qos_profile=qos_policy
