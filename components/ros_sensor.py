@@ -62,15 +62,20 @@ class RosSensor(Sensor, Reconfigurable):
     @classmethod
     def validate_config(cls, config: ComponentConfig) -> Sequence[str]:
         topic = config.attributes.fields['ros_topic'].string_value
+        msg_type = config.attributes.fields['ros_msg_type'].string_value
+
         if topic == '':
             raise Exception('ros_topic required')
+
+        if msg_type == '':
+            raise Exception('ros_msg_type required')
         return []
 
     def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
         self.ros_topic = config.attributes.fields['ros_topic'].string_value
         self.node_name = config.attributes.fields['ros_node_name'].string_value
 
-        if self.node_name == '' or self.node_name == None:
+        if self.node_name is None or self.node_name == '':
             self.node_name = 'VIAM_ROS_HAZARD_SENSOR_NODE'
 
         self.ros_node = RosIrobotHazardNode(self.ros_topic, self.node_name)

@@ -1,4 +1,3 @@
 # viam-ros2-module
 
-
-Testing multithreaded executor
+## TODO: document humble support

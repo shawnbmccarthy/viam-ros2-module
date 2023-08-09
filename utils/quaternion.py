@@ -1,7 +1,12 @@
+"""
+This is a utility library to convert quaternions to viams
+orientation vector
+"""
 import ctypes
 from ctypes import Structure, POINTER, c_double
 from viam.components.movement_sensor import Orientation
 
+# this will be loaded using the LD_LIBRARY PATH
 lib = ctypes.cdll.LoadLibrary("libviam_rust_utils.so")
 
 

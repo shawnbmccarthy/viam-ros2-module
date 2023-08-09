@@ -4,10 +4,25 @@ from viam.logging import getLogger
 
 
 class RclpyNodeManager:
+    """
+    RclpyNodeManager
+
+    A singleton pattern to ensure we have only
+    one Multithreaded executor spinning for the
+    viam intagration.
+
+    The multithreaded executor is used so we can
+    support multiple nodes as needed.
+    """
     mgr = None
 
     @classmethod
     def get_instance(cls):
+        """
+        return either a new instance or the existing
+
+        :return:
+        """
         if cls.mgr is None:
             rclpy.init(args=None)
             cls.mgr = RclpyNodeManager()
@@ -24,7 +39,7 @@ class RclpyNodeManager:
         self.logger.debug(f'RclpyNodeManager: attempting to add: {node.get_name()}')
         self.executor.add_node(node)
 
-        if self.executor_thread == None:
+        if self.executor_thread is None:
             self.logger.debug('creating executor thread for multithreaded executor')
             self.executor_thread = Thread(target=self.executor.spin, daemon=True)
             self.executor_thread.start()
