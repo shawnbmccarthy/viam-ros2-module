@@ -17,7 +17,7 @@ from viam.resource.types import Model, ModelFamily
 from viam.utils import ValueTypes
 from rclpy.node import Node
 from irobot_create_msgs.msg import HazardDetectionVector
-
+from .viam_ros_node import ViamRosNode
 
 
 class RosIrobotHazardNode(Node):
@@ -38,7 +38,7 @@ class RosIrobotHazardNode(Node):
         self.msg = None
 
     def subscriber_callback(self, msg):
-        self.get_logger().info(f'subscriber_callback(): {self.get_name()} -> {msg}')
+        self.get_logger().debug(f'subscriber_callback(): {self.get_name()} -> {msg}')
         with self.lock:
             self.msg = msg
 
@@ -47,8 +47,7 @@ class RosSensor(Sensor, Reconfigurable):
     # TODO: Make sensor generic with the ability to customize nodes and return messages
     MODEL: ClassVar[Model] = Model(ModelFamily('viamlabs', 'ros2'), 'sensor')
     ros_topic: str
-    ros_node: Node
-    node_name: str
+    ros_node: ViamRosNode
     logger: logging.Logger
 
     @classmethod

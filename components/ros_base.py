@@ -1,5 +1,5 @@
+import logging
 from threading import Lock
-import rclpy
 import viam
 from utils import RclpyNodeManager
 from viam.logging import getLogger
@@ -14,31 +14,25 @@ from viam.resource.registry import Registry, ResourceCreatorRegistration
 from viam.resource.types import Model, ModelFamily
 from viam.utils import ValueTypes
 from rclpy.node import Node
+from rclpy.publisher import Publisher
+from rclpy.timer import Rate
 from geometry_msgs.msg import Twist
+from .viam_ros_node import ViamRosNode
 
 logger = getLogger(__name__)
 
 
-class RosBaseNode(Node):
-    def __init__(self, base_topic, node_name):
-        super().__init__(node_name, enable_rosout=True)
-        self.lock = Lock()
-        self.twist_msg = Twist()
-        self.publisher = self.create_publisher(Twist, base_topic, 10)
-        self.create_timer(0.2, self.timer_callback)
-        self.get_logger().debug('RosBaseNode(): created node')
-
-    def timer_callback(self):
-        self.get_logger().debug(f'timer_callback(): {self.get_name()} -> {self.twist_msg}')
-        self.publisher.publish(self.twist_msg)
-
-
 class RosBase(Base, Reconfigurable):
     MODEL: ClassVar[Model] = Model(ModelFamily('viamlabs', 'ros2'), 'base')
-    ros_topic: str
     is_base_moving: bool
-    ros_node: Node
-    node_name: str
+    lock: Lock
+    logger: logging.Logger
+    publisher: Publisher
+    publish_rate: float
+    rate: Rate
+    ros_node: ViamRosNode
+    ros_topic: str
+    twist_msg: Twist
 
     @classmethod
     def new(cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
@@ -50,25 +44,37 @@ class RosBase(Base, Reconfigurable):
     @classmethod
     def validate_config(cls, config: ComponentConfig) -> Sequence[str]:
         topic = config.attributes.fields['ros_topic'].string_value
+        publish_rate = float(config.attributes.fields['publish_rate'].string_value)
+
         if topic == '':
             raise Exception('ros_topic required')
+
+        if publish_rate == 0.0:
+            raise Exception('rate required')
+
         return []
+
+    def ros_publisher_cb(self):
+        self.publisher.publish(self.twist_msg)
+
 
     def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
         self.ros_topic = config.attributes.fields['ros_topic'].string_value
-        self.node_name = config.attributes.fields['ros_node_name'].string_value
+        self.publish_rate = float(config.attributes.fields['publish_rate'].string_value)
+        self.twist_msg = Twist()
 
-        if self.node_name == '' or self.node_name == None:
-            self.node_name = 'VIAM_ROS_BASE_NODE'
+        if self.ros_node is not None:
+            if self.publisher is not None:
+                self.ros_node.destroy_publisher(self.publisher)
+            if self.rate is not None:
+                self.ros_node.destroy_rate(self.rate)
+        else:
+            self.ros_node = ViamRosNode.get_viam_ros_node()
 
+        self.publisher = self.ros_node.create_publisher(Twist, self.ros_topic, 10)
+        self.rate = self.ros_node.create_timer(self.publish_rate, self.ros_publisher_cb)
         self.is_base_moving = False
-        self.ros_node = RosBaseNode(self.ros_topic, self.node_name)
-        # TODO: validate reconfigure works 
-        #       issue around node name (what happens when we change the node name?)
-        rcl_mgr = RclpyNodeManager.get_instance()
-        rcl_mgr.remove_node(self.ros_node)
-        rcl_mgr.spin_and_add_node(self.ros_node)
-        self.is_base_moving = False
+        self.lock = Lock()
 
     async def move_straight(self, distance: int, velocity: float, *, extra: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None, **kwargs):
         raise NotImplementedError()
@@ -84,11 +90,11 @@ class RosBase(Base, Reconfigurable):
             extra: Optional[Dict[str, Any]] = None,
             timeout: Optional[float] = None, **kwargs
     ) -> None:
-        with self.ros_node.lock:
-            self.ros_node.twist_msg.linear.x = linear.y
-            self.ros_node.twist_msg.angular.z = angular.z
+        with self.lock:
+            self.twist_msg.linear.x = linear.y
+            self.twist_msg.angular.z = angular.z
             self.is_base_moving = True
-        self.ros_node.get_logger().debug(f'set_power: {self.ros_node.twist_msg}')
+        logger.debug(f'set_power: {self.twist_msg}')
 
     async def set_velocity(
             self,
@@ -99,11 +105,11 @@ class RosBase(Base, Reconfigurable):
             timeout: Optional[float] = None,
             **kwargs
     ) -> None:
-        with self.ros_node.lock:
-            self.ros_node.twist_msg.linear.x = linear.y
-            self.ros_node.twist_msg.angular.z = angular.z
+        with self.lock:
+            self.twist_msg.linear.x = linear.y
+            self.twist_msg.angular.z = angular.z
             self.is_base_moving = True
-        self.ros_node.get_logger().debug(f'set_velocity: {self.ros_node.twist_msg}')
+        logger.debug(f'set_velocity: {self.twist_msg}')
 
     async def stop(
             self,
@@ -111,11 +117,11 @@ class RosBase(Base, Reconfigurable):
             timeout: Optional[float] = None,
             **kwargs
     ) -> None:
-        with self.ros_node.lock:
-            self.ros_node.twist_msg.linear.x = 0.0
-            self.ros_node.twist_msg.angular.z = 0.0
+        with self.lock:
+            self.twist_msg.linear.x = 0.0
+            self.twist_msg.angular.z = 0.0
             self.is_base_moving = False
-        self.ros_node.get_logger().debug(f'stop: done')
+        logger.debug(f'stop: done')
 
     async def is_moving(self):
         return self.is_base_moving

@@ -11,12 +11,13 @@ from viam.components.movement_sensor import MovementSensor
 from viam.components.sensor import Sensor
 from viam.logging import getLogger
 from viam.module.module import Module
-from components import RosBase, RosImu, RosLidar, RosSensor
+from components import RosBase, RosImu, RosLidar, RosSensor, ViamRosNode
 from utils import RclpyNodeManager
 
 logger = getLogger(__name__)
 
 rclpy_mgr = None
+viam_node = None
 
 
 def sigterm_handler(_signo, _stack_frame):
@@ -27,8 +28,14 @@ def sigterm_handler(_signo, _stack_frame):
 async def main(addr: str) -> None:
     try:
         global rclpy_mgr
+        global viam_node
         logger.info('starting ros2 module server')
+
+        # setup viam ros node & do we need to do work in finally
         rclpy_mgr = RclpyNodeManager.get_instance()
+        viam_node = ViamRosNode.get_viam_ros_node()
+        rclpy_mgr.spin_and_add_node(viam_node)
+
         m = Module(addr)
         m.add_model_from_registry(Base.SUBTYPE, RosBase.MODEL)
         m.add_model_from_registry(MovementSensor.SUBTYPE, RosImu.MODEL)
