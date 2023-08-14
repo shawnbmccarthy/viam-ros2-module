@@ -62,7 +62,7 @@ class RosLidar(Camera, Reconfigurable):
             if self.subscription is not None:
                 self.ros_node.destroy_subscription(self.subscription)
         else:
-            self.ros_node = ViamRosNode()
+            self.ros_node = ViamRosNode.get_viam_ros_node()
 
         qos_policy = rclpy.qos.QoSProfile(
             reliability=rclpy.qos.ReliabilityPolicy.BEST_EFFORT,
@@ -71,7 +71,7 @@ class RosLidar(Camera, Reconfigurable):
         )
 
         self.subscription = self.ros_node.create_subscription(
-            Imu,
+            LaserScan,
             self.ros_topic,
             self.subscriber_callback,
             qos_profile=qos_policy
@@ -100,7 +100,7 @@ class RosLidar(Camera, Reconfigurable):
         #    ang = msg.angle_min * (i * msg.angle_increment)
         #    v.y = 1000 * math.sin(ang) * range
         #    v.x = 1000 * math.cos(ang) * range
-        self.logger.info(msg)
+        self.logger.debug(self.msg)
         raise NotImplementedError()
 
     async def get_properties(self, *, timeout: Optional[float] = None, **kwargs) -> Camera.Properties:
