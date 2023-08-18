@@ -1,4 +1,3 @@
-import sys
 import logging
 
 import PIL
@@ -6,8 +5,7 @@ import rclpy
 import viam
 from threading import Lock
 from viam.logging import getLogger
-from typing import Any, ClassVar, Dict, Mapping, Optional, Sequence, Tuple, Union, List
-from collections import namedtuple
+from typing import ClassVar, Mapping, Optional, Sequence, Tuple, Union, List
 from typing_extensions import Self
 from viam.components.camera import Camera, IntrinsicParameters, DistortionParameters
 from viam.module.types import Reconfigurable
@@ -28,11 +26,7 @@ from cv_bridge import CvBridge
 
 class RosCameraProperties(Camera.Properties):
     def __init__(self):
-        super().__init__(
-            supports_pcd=False,
-            intrinsic_parameters=IntrinsicParameters(width_px=0,height_px=0,focal_x_px=0,focal_y_px=0, center_x_px=0, center_y_px=1.0),
-            distortion_parameters=DistortionParameters(model=""),
-        )
+        super().__init__()
 
 
 class RosCamera(Camera, Reconfigurable):
@@ -41,7 +35,7 @@ class RosCamera(Camera, Reconfigurable):
     ros_node: Node
     subscription: Subscription
     logger: logging.Logger
-    msg: Image
+    image: PIL.Image
     lock: Lock
     props: RosCameraProperties
     bridge = CvBridge()
@@ -53,7 +47,11 @@ class RosCamera(Camera, Reconfigurable):
         camera = cls(config.name)
         camera.ros_node = None
         camera.logger = getLogger(f"{__name__}.{camera.__class__.__name__}")
-        camera.props = RosCameraProperties()
+        camera.props = Camera.Properties(
+            supports_pcd=False,
+            distortion_parameters=DistortionParameters(),
+            intrinsic_parameters=IntrinsicParameters(),
+        )
         camera.reconfigure(config, dependencies)
         return camera
 
@@ -63,6 +61,7 @@ class RosCamera(Camera, Reconfigurable):
         if topic == "":
             raise Exception("ros_topic required")
         return []
+
 
     def reconfigure(
         self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]
@@ -85,20 +84,22 @@ class RosCamera(Camera, Reconfigurable):
             Image, self.ros_topic, self.subscriber_callback, qos_profile=qos_policy
         )
         self.lock = Lock()
-        self.msg = None
+        self.image = None
+
 
     def subscriber_callback(self, msg):
         with self.lock:
-            self.msg = msg
+            self.image = PIL.Image.fromArray(self.bridge.imgmsg_to_cv2(msg))
+            self.image.close()
 
-    # @TODO Change to camera methods
+
     async def get_image(
-        self, *, timeout: Optional[float] = None, **kwargs
+        self, mime_type="", timeout: Optional[float] = None, **kwargs
     ) -> Union[PIL.Image.Image, viam.components.camera.RawImage]:
-        if self.msg is None:
+        if self.image is None:
             raise Exception("ros image message not ready")
-        image = self.bridge.imgmsg_to_cv2(self.msg, desired_encoding="passthrough")
-        return image
+        return self.image
+
 
     async def get_images(
         self, *, timeout: Optional[float] = None, **kwargs
@@ -106,14 +107,17 @@ class RosCamera(Camera, Reconfigurable):
         self.logger.warning(f"get_images: not implemented")
         raise NotImplementedError()
 
+
     async def get_point_cloud(
         self, *, timeout: Optional[float] = None, **kwargs
     ) -> Tuple[bytes, str]:
         self.logger.warning(f"get_point_cloud: not implemented")
         raise NotImplementedError()
 
+
     async def get_properties(self, *, timeout: Optional[float] = None, **kwargs):
         return self.props
+
 
     async def do_command(
         self,
