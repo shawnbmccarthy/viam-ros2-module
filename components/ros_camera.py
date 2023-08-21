@@ -1,11 +1,10 @@
 import logging
-
-import PIL
+from PIL import Image
 import rclpy
 import viam
 from threading import Lock
 from viam.logging import getLogger
-from typing import ClassVar, Mapping, Optional, Sequence, Tuple, Union, List
+from typing import ClassVar, Mapping, Optional, Sequence, Tuple, List
 from typing_extensions import Self
 from viam.components.camera import Camera, IntrinsicParameters, DistortionParameters
 from viam.module.types import Reconfigurable
@@ -18,8 +17,8 @@ from viam.utils import ValueTypes
 from rclpy.node import Node
 from rclpy.subscription import Subscription
 from sensor_msgs.msg import (
-    Image,
-)  # http://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/Image.html
+    Image as ROSImage,
+)  # http://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/Image.html / http://wiki.ros.org/cv_bridge/Tutorials/ConvertingBetweenROSImagesAndOpenCVImagesPython
 from .viam_ros_node import ViamRosNode
 from cv_bridge import CvBridge
 
@@ -31,14 +30,15 @@ class RosCameraProperties(Camera.Properties):
 
 class RosCamera(Camera, Reconfigurable):
     MODEL: ClassVar[Model] = Model(ModelFamily("viamlabs", "ros2"), "camera")
+
+    # Instance variables
     ros_topic: str
     ros_node: Node
     subscription: Subscription
     logger: logging.Logger
-    image: PIL.Image
-    lock: Lock
     props: RosCameraProperties
-    bridge = CvBridge()
+    lock: Lock
+    image: ROSImage
 
     @classmethod
     def new(
@@ -67,7 +67,6 @@ class RosCamera(Camera, Reconfigurable):
         self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]
     ):
         self.ros_topic = config.attributes.fields["ros_topic"].string_value
-
         if self.ros_node is not None:
             if self.subscription is not None:
                 self.ros_node.destroy_subscription(self.subscription)
@@ -81,24 +80,24 @@ class RosCamera(Camera, Reconfigurable):
         )
 
         self.subscription = self.ros_node.create_subscription(
-            Image, self.ros_topic, self.subscriber_callback, qos_profile=qos_policy
+            ROSImage, self.ros_topic, self.subscriber_callback, qos_profile=qos_policy
         )
         self.lock = Lock()
-        self.image = None
 
 
-    def subscriber_callback(self, msg):
-        with self.lock:
-            self.image = PIL.Image.fromArray(self.bridge.imgmsg_to_cv2(msg))
-            self.image.close()
+    def subscriber_callback(self, rosimage) -> None:
+        self.image = rosimage
 
 
     async def get_image(
         self, mime_type="", timeout: Optional[float] = None, **kwargs
-    ) -> Union[PIL.Image.Image, viam.components.camera.RawImage]:
-        if self.image is None:
-            raise Exception("ros image message not ready")
-        return self.image
+    ) -> Image:
+        bridge = CvBridge()
+        with self.lock:
+            img = Image.fromarray(bridge.imgmsg_to_cv2(self.image, desired_encoding='passthrough'))
+            if self.image is None:
+                img = Image.new(mode="RGB", size=(250, 250))
+            return img
 
 
     async def get_images(
