@@ -1,0 +1,92 @@
+{
+  "modules": [
+    {
+      "type": "local",
+      "name": "ros2",
+      "executable_path": "/home/ubuntu/viam-ros2-module/run.sh"
+    },
+    {
+      "executable_path": "/usr/local/bin/cartographer-module",
+      "type": "local",
+      "name": "cartographer-module"
+    }
+  ],
+  "services": [
+    {
+      "type": "slam",
+      "model": "viam:slam:cartographer",
+      "attributes": {
+        "config_params": {
+          "mode": "2d"
+        },
+        "data_dir": "/root/cdir",
+        "sensors": [
+          "lidar"
+        ]
+      },
+      "name": "slam"
+    },
+    {
+      "name": "datacapture",
+      "type": "data_manager",
+      "attributes": {
+        "capture_dir": "",
+        "tags": [
+          "ros2"
+        ],
+        "additional_sync_paths": [
+          "/opt/rosbags"
+        ],
+        "sync_interval_mins": 5
+      }
+    },
+    {
+      "type": "shell",
+      "attributes": {},
+      "name": "shell"
+    }
+  ],
+  "components": [
+    {
+      "name": "rosbase",
+      "type": "base",
+      "model": "viamlabs:ros2:base",
+      "attributes": {
+        "ros_topic": "/cmd_vel",
+        "publish_rate": "0.2"
+      },
+      "depends_on": []
+    },
+    {
+      "depends_on": [],
+      "name": "imu",
+      "type": "movement_sensor",
+      "model": "viamlabs:ros2:imu",
+      "attributes": {
+        "ros_topic": "/imu"
+      }
+    },
+    {
+      "model": "viamlabs:ros2:lidar",
+      "attributes": {
+        "ros_topic": "/scan"
+      },
+      "depends_on": [],
+      "name": "lidar",
+      "type": "camera"
+    },
+    {
+      "depends_on": [],
+      "name": "sensor",
+      "type": "sensor",
+      "model": "viamlabs:ros2:sensor",
+      "attributes": {
+        "ros_msg_type": "HazardDetectionVector",
+        "ros_topic": "/hazard_detection"
+      }
+    }
+  ],
+  "network": {
+    "bind_address": ":9090"
+  }
+}
