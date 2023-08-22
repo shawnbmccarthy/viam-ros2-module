@@ -8,6 +8,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 #sudo apt install python3-pip
 #sudo apt-get install python3-venv
+#sudo apt install ros-humble-depthai-ros
 
 python3 -m venv ${SCRIPT_DIR}/venv
 
