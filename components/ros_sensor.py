@@ -72,8 +72,7 @@ class RosSensor(Sensor, Reconfigurable):
         self.ros_topic = config.attributes.fields['ros_topic'].string_value
 
         if self.ros_node is not None:
-
-        self.ros_node = ViamRosNode.get_viam_ros_node()
+            self.ros_node = ViamRosNode.get_viam_ros_node()
 
         rcl_mgr = RclpyNodeManager.get_instance()
         rcl_mgr.remove_node(self.ros_node)
