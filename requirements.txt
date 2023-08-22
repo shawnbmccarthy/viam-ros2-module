@@ -20,8 +20,6 @@ camera-calibration==3.0.0
 composition-interfaces==1.2.1
 control-msgs==4.4.0
 cv-bridge==3.2.1
-depthai-ros-driver==2.7.4
-depthai-ros-msgs==2.7.4
 diagnostic-aggregator==3.1.2
 diagnostic-msgs==4.2.3
 diagnostic-updater==3.1.2
