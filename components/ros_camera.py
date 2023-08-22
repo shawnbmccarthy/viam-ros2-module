@@ -16,16 +16,9 @@ from viam.resource.types import Model, ModelFamily
 from viam.utils import ValueTypes
 from rclpy.node import Node
 from rclpy.subscription import Subscription
-from sensor_msgs.msg import (
-    Image as ROSImage,
-)  # http://docs.ros.org/en/noetic/api/sensor_msgs/html/msg/Image.html / http://wiki.ros.org/cv_bridge/Tutorials/ConvertingBetweenROSImagesAndOpenCVImagesPython
+from sensor_msgs.msg import Image as ROSImage
 from .viam_ros_node import ViamRosNode
 from cv_bridge import CvBridge
-
-
-class RosCameraProperties(Camera.Properties):
-    def __init__(self):
-        super().__init__()
 
 
 class RosCamera(Camera, Reconfigurable):
@@ -36,7 +29,7 @@ class RosCamera(Camera, Reconfigurable):
     ros_node: Node
     subscription: Subscription
     logger: logging.Logger
-    props: RosCameraProperties
+    props: Camera.Properties
     lock: Lock
     image: ROSImage
 
@@ -62,7 +55,6 @@ class RosCamera(Camera, Reconfigurable):
             raise Exception("ros_topic required")
         return []
 
-
     def reconfigure(
         self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]
     ):
@@ -84,39 +76,32 @@ class RosCamera(Camera, Reconfigurable):
         )
         self.lock = Lock()
 
-
     def subscriber_callback(self, rosimage) -> None:
         self.image = rosimage
-
 
     async def get_image(
         self, mime_type="", timeout: Optional[float] = None, **kwargs
     ) -> Image:
         bridge = CvBridge()
         with self.lock:
-            img = Image.fromarray(bridge.imgmsg_to_cv2(self.image, desired_encoding='passthrough'))
             if self.image is None:
                 img = Image.new(mode="RGB", size=(250, 250))
+            else:
+                img = Image.fromarray(bridge.imgmsg_to_cv2(self.image, desired_encoding='passthrough'))
             return img
-
 
     async def get_images(
         self, *, timeout: Optional[float] = None, **kwargs
     ) -> Tuple[List[viam.media.video.NamedImage], viam.proto.common.ResponseMetadata]:
-        self.logger.warning(f"get_images: not implemented")
         raise NotImplementedError()
-
 
     async def get_point_cloud(
         self, *, timeout: Optional[float] = None, **kwargs
     ) -> Tuple[bytes, str]:
-        self.logger.warning(f"get_point_cloud: not implemented")
         raise NotImplementedError()
-
 
     async def get_properties(self, *, timeout: Optional[float] = None, **kwargs):
         return self.props
-
 
     async def do_command(
         self,
