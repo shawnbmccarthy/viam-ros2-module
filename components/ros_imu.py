@@ -32,6 +32,7 @@ class RosImuProperties(MovementSensor.Properties):
             linear_velocity_supported=False
         )
 
+
 class RosImu(MovementSensor, Reconfigurable):
     MODEL: ClassVar[Model] = Model(ModelFamily('viamlabs', 'ros2'), 'imu')
     ros_topic: str
@@ -87,7 +88,6 @@ class RosImu(MovementSensor, Reconfigurable):
         with self.lock:
             self.msg = msg
 
-
     async def get_position(
         self,
         *,
@@ -119,7 +119,6 @@ class RosImu(MovementSensor, Reconfigurable):
             raise Exception("ros imu message not ready")
         av = self.msg.angular_velocity
         return Vector3(x=av.x, y=av.y, z=av.z)
-
 
     async def get_linear_acceleration(
         self,

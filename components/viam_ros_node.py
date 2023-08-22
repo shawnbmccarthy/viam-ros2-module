@@ -9,7 +9,7 @@ class ViamRosNode(Node):
     node = None
 
     @classmethod
-    def get_viam_ros_node(cls, node_name:str='VIAM_ROS_NODE', enable_rosout:bool=True):
+    def get_viam_ros_node(cls, node_name:str='viam_ros_node', enable_rosout:bool=True):
         if cls.node is None:
             cls.node = ViamRosNode(node_name, enable_rosout)
         return cls.node

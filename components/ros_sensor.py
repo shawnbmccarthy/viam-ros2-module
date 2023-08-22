@@ -1,7 +1,5 @@
-import sys
 import logging
 import rclpy
-import viam
 from threading import Lock
 from utils import RclpyNodeManager
 from viam.logging import getLogger
@@ -72,12 +70,11 @@ class RosSensor(Sensor, Reconfigurable):
 
     def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
         self.ros_topic = config.attributes.fields['ros_topic'].string_value
-        self.node_name = config.attributes.fields['ros_node_name'].string_value
 
-        if self.node_name is None or self.node_name == '':
-            self.node_name = 'VIAM_ROS_HAZARD_SENSOR_NODE'
+        if self.ros_node is not None:
 
-        self.ros_node = RosIrobotHazardNode(self.ros_topic, self.node_name)
+        self.ros_node = ViamRosNode.get_viam_ros_node()
+
         rcl_mgr = RclpyNodeManager.get_instance()
         rcl_mgr.remove_node(self.ros_node)
         rcl_mgr.spin_and_add_node(self.ros_node)

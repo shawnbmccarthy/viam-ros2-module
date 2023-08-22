@@ -2,6 +2,7 @@
 
 # TODO: handler does not seem to execute properly
 import asyncio
+import os
 import signal
 import sys
 

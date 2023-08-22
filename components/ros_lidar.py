@@ -2,7 +2,6 @@ import logging
 import math
 import numpy as np
 import rclpy
-import viam
 
 from rclpy.node import Node
 from rclpy.subscription import Subscription
@@ -11,9 +10,7 @@ from sensor_msgs.msg import LaserScan
 from threading import Lock
 from typing import ClassVar, List, Mapping, Optional, Sequence, Tuple, Union
 from typing_extensions import Self
-from utils import RclpyNodeManager
 from viam.components.camera import Camera, DistortionParameters, IntrinsicParameters, RawImage
-from viam.components.movement_sensor import Vector3
 from viam.logging import getLogger
 from viam.media.video import NamedImage 
 from viam.module.types import Reconfigurable
@@ -23,6 +20,7 @@ from viam.resource.base import ResourceBase
 from viam.resource.registry import Registry, ResourceCreatorRegistration
 from viam.resource.types import Model, ModelFamily
 from .viam_ros_node import ViamRosNode
+from viam.media.video import CameraMimeType
 
 
 class RosLidar(Camera, Reconfigurable):
@@ -65,11 +63,10 @@ class RosLidar(Camera, Reconfigurable):
             self.ros_node = ViamRosNode.get_viam_ros_node()
 
         qos_policy = rclpy.qos.QoSProfile(
-            reliability=rclpy.qos.ReliabilityPolicy.BEST_EFFORT,
-            history=rclpy.qos.HistoryPolicy.KEEP_LAST,
+            reliability=rclpy.qos.ReliabilityPolicy.SYSTEM_DEFAULT,
+            history=rclpy.qos.HistoryPolicy.SYSTEM_DEFAULT,
             depth=1
         )
-
         self.subscription = self.ros_node.create_subscription(
             LaserScan,
             self.ros_topic,
@@ -92,21 +89,37 @@ class RosLidar(Camera, Reconfigurable):
     async def get_point_cloud(self, *, timeout: Optional[float]=None, **kwargs) -> Tuple[bytes, str]:
         if self.msg is None:
             raise Exception('laserscan msg not ready')
-        #
-        #for idx, range in enumerate(msg.ranges):
-        #    if range < msg.range_min or r > msg.range_max:
-        #        continue
-        #    v = Vector3()
-        #    ang = msg.angle_min * (i * msg.angle_increment)
-        #    v.y = 1000 * math.sin(ang) * range
-        #    v.x = 1000 * math.cos(ang) * range
-        self.logger.debug(self.msg)
-        raise NotImplementedError()
+
+        version = 'VERSION .7\n'
+        fields = 'FIELDS x y z\n'
+        size = 'SIZE 4 4 4\n'
+        type_of = 'TYPE F F F\n'
+        count = 'COUNT 1 1 1\n'
+        height = 'HEIGHT 1\n'
+        viewpoint = 'VIEWPOINT 0 0 0 1 0 0 0\n'
+        data = 'DATA binary\n'
+        pdata = []
+        for i, r in enumerate(self.msg.ranges):
+            if r < self.msg.range_min or r > self.msg.range_max:
+                continue
+
+            ang = self.msg.angle_min + (float(i) * self.msg.angle_increment)
+            y = math.sin(ang) * r
+            x = math.cos(ang) * r
+            pdata.append(x)
+            pdata.append(y)
+            pdata.append(float(0))
+
+        width = f'WIDTH {len(pdata)}\n'
+        points = f'POINTS {len(pdata)}\n'
+        header = f'{version}{fields}{size}{type_of}{count}{width}{height}{viewpoint}{points}{data}'
+        a = np.array(pdata, dtype='f')
+        h = bytes(header, 'UTF-8')
+
+        return h + a.tobytes(), CameraMimeType.PCD
 
     async def get_properties(self, *, timeout: Optional[float] = None, **kwargs) -> Camera.Properties:
         return self.ros_lidar_properties
-
-
 
 Registry.register_resource_creator(
     Camera.SUBTYPE,
