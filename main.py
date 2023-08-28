@@ -14,6 +14,8 @@ from viam.logging import getLogger
 from viam.module.module import Module
 from components import RosBase, RosImu, RosLidar, RosSensor, ViamRosNode, RosCamera
 from utils import RclpyNodeManager
+from viam.services.service_base import ServiceBase
+from services.ros_logger import RosLogger
 
 logger = getLogger(__name__)
 
@@ -43,6 +45,7 @@ async def main(addr: str) -> None:
         m.add_model_from_registry(Camera.SUBTYPE, RosLidar.MODEL)
         m.add_model_from_registry(Sensor.SUBTYPE, RosSensor.MODEL)
         m.add_model_from_registry(Camera.SUBTYPE, RosCamera.MODEL)
+        m.add_model_from_registry(ServiceBase.SUBTYPE, RosLogger.MODEL)
         await m.start()
     finally:
         rclpy_mgr.shutdown()
