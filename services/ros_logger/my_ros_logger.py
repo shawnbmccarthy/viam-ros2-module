@@ -1,21 +1,25 @@
-from typing import ClassVar, Mapping, Self, Sequence
+from typing import ClassVar, Final, Mapping, Sequence, Optional
+from typing_extensions import Self
 import logging
 import rclpy
-from rosgraph_msgs.msg import Log
 from threading import Lock
 from viam.services.service_base import ServiceBase
 from viam.module.types import Reconfigurable
 from viam.resource.types import Model, ModelFamily
 from viam.proto.app.robot import ServiceConfig
 from viam.resource.base import ResourceBase, ResourceName
+from viam.utils import ValueTypes
+from viam.resource.registry import Registry, ResourceCreatorRegistration
+from viam.resource.types import RESOURCE_TYPE_SERVICE, Subtype
+from rcl_interfaces.msg import Log
 
-from ..components.viam_ros_node import ViamRosNode
+from components.viam_ros_node import ViamRosNode
 
 class RosLogger(ServiceBase, Reconfigurable):
     """
     A service which takes messages from the ros_out_agg topic and loggs them to Viam
     """
-
+    SUBTYPE: Final = Subtype("viamlabs", RESOURCE_TYPE_SERVICE, "ros_logger")
     MODEL: ClassVar[Model] = Model(ModelFamily("viamlabs", "ros2"), "ros_logger")
 
     # Instance variables
@@ -28,7 +32,7 @@ class RosLogger(ServiceBase, Reconfigurable):
 
     # Constructor
     @classmethod
-    def new_service(cls, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
+    def new(cls, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
         service = cls(config.name)
         service.reconfigure(config, dependencies)
         return service
@@ -64,5 +68,16 @@ class RosLogger(ServiceBase, Reconfigurable):
         )
         self.lock = Lock()
 
-    def subscriber_callback(self, rosimage) -> None:
-        self.image = rosimage
+    def subscriber_callback(self, log) -> None:
+        self.logger.warning("LoggerService")
+
+    # Handles arbitrary commands to the Resource
+    async def do_command(
+        self,
+        command: Mapping[str, ValueTypes],
+        *,
+        timeout: Optional[float] = None,
+        **kwargs,
+    ):
+        raise NotImplementedError()
+    
