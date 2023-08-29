@@ -1,6 +1,6 @@
 import logging
 from threading import Lock
-from typing import ClassVar, Final, Mapping, Optional, Sequence
+from typing import ClassVar, Mapping, Sequence
 
 import rclpy
 from rcl_interfaces.msg import Log
@@ -9,10 +9,7 @@ from viam.logging import getLogger
 from viam.module.types import Reconfigurable
 from viam.proto.app.robot import ServiceConfig
 from viam.resource.base import ResourceBase, ResourceName
-from viam.resource.registry import Registry, ResourceCreatorRegistration
 from viam.resource.types import Model, ModelFamily
-from viam.services.service_base import ServiceBase
-from viam.utils import ValueTypes
 
 from components.viam_ros_node import ViamRosNode
 
@@ -21,7 +18,7 @@ from .api import SummationService
 
 class MyRosLoggerService(SummationService, Reconfigurable):
     """
-    A service which takes messages from the rosout / rosout_agg topic and loggs them to Viam
+    A service which takes messages from the ROS topic configured under the service attributes as "ros_topic": with rosout or rosout_agg and logs them to Viam
     """
 
     MODEL: ClassVar[Model] = Model(ModelFamily("viamlabs", "ros2"), "ros_logger")
@@ -69,7 +66,7 @@ class MyRosLoggerService(SummationService, Reconfigurable):
         )
 
         self.subscription = self.ros_node.create_subscription(
-            Log, "/rosout", self.subscriber_callback, qos_profile=qos_policy
+            Log, self.ros_topic, self.subscriber_callback, qos_profile=qos_policy
         )
         self.lock = Lock()
 
