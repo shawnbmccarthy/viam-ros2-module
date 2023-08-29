@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package viamlabs.service.ros_logger.v1
+package viamlabs.service.ros_logger.v1;
 
 import "google/api/annotations.proto";
 
