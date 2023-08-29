@@ -1,6 +1,6 @@
 import asyncio
 
-from .ros_logger import RosLogger
+from .my_ros_logger import MyRosLoggerService
 
 from viam import logging
 from viam.robot.client import RobotClient
@@ -20,7 +20,7 @@ async def main():
     print(robot.resource_names)
 
     # # ####### ROS LOGGER ####### #
-    summer = RosLogger.from_robot(robot, name="mysum1")
+    summer = MyRosLoggerService.from_robot(robot, name="mysum1")
     sum = await summer.sum([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     print(f"The sum of the numbers [0, 10) is {sum}")
 

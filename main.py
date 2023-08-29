@@ -12,10 +12,12 @@ from viam.components.movement_sensor import MovementSensor
 from viam.components.sensor import Sensor
 from viam.logging import getLogger
 from viam.module.module import Module
-from components import RosBase, RosImu, RosLidar, RosSensor, ViamRosNode, RosCamera
-from utils import RclpyNodeManager
 from viam.services.service_base import ServiceBase
-from services.ros_logger.my_ros_logger import RosLogger
+
+from components import (RosBase, RosCamera, RosImu, RosLidar, RosSensor,
+                        ViamRosNode)
+from services.ros_logger import MyRosLoggerService, SummationService
+from utils import RclpyNodeManager
 
 logger = getLogger(__name__)
 
@@ -45,11 +47,10 @@ async def main(addr: str) -> None:
         m.add_model_from_registry(Camera.SUBTYPE, RosLidar.MODEL)
         m.add_model_from_registry(Sensor.SUBTYPE, RosSensor.MODEL)
         m.add_model_from_registry(Camera.SUBTYPE, RosCamera.MODEL)
-        m.add_model_from_registry(RosLogger.SUBTYPE, RosLogger.MODEL)
+        m.add_model_from_registry(SummationService.SUBTYPE, MyRosLoggerService.MODEL)
         await m.start()
     finally:
         rclpy_mgr.shutdown()
-
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:

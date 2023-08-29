@@ -1,25 +1,29 @@
-from typing import ClassVar, Final, Mapping, Sequence, Optional
-from typing_extensions import Self
 import logging
-import rclpy
 from threading import Lock
-from viam.services.service_base import ServiceBase
+from typing import ClassVar, Final, Mapping, Optional, Sequence
+
+import rclpy
+from rcl_interfaces.msg import Log
+from typing_extensions import Self
+from viam.logging import getLogger
 from viam.module.types import Reconfigurable
-from viam.resource.types import Model, ModelFamily
 from viam.proto.app.robot import ServiceConfig
 from viam.resource.base import ResourceBase, ResourceName
-from viam.utils import ValueTypes
 from viam.resource.registry import Registry, ResourceCreatorRegistration
-from viam.resource.types import RESOURCE_TYPE_SERVICE, Subtype
-from rcl_interfaces.msg import Log
+from viam.resource.types import Model, ModelFamily
+from viam.services.service_base import ServiceBase
+from viam.utils import ValueTypes
 
 from components.viam_ros_node import ViamRosNode
 
-class RosLogger(ServiceBase, Reconfigurable):
+from .api import SummationService
+
+
+class MyRosLoggerService(SummationService, Reconfigurable):
     """
-    A service which takes messages from the ros_out_agg topic and loggs them to Viam
+    A service which takes messages from the rosout / rosout_agg topic and loggs them to Viam
     """
-    SUBTYPE: Final = Subtype("viamlabs", RESOURCE_TYPE_SERVICE, "ros_logger")
+
     MODEL: ClassVar[Model] = Model(ModelFamily("viamlabs", "ros2"), "ros_logger")
 
     # Instance variables
@@ -34,6 +38,8 @@ class RosLogger(ServiceBase, Reconfigurable):
     @classmethod
     def new(cls, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
         service = cls(config.name)
+        service.ros_node = None
+        service.logger = getLogger(f"{__name__}.{service.__class__.__name__}")
         service.reconfigure(config, dependencies)
         return service
 
@@ -43,13 +49,12 @@ class RosLogger(ServiceBase, Reconfigurable):
         ros_topic = config.attributes.fields["ros_topic"].string_value
         if ros_topic == "":
             raise Exception("A ros_topic attribute is required for this service.")
-        ros_topic= [config.attributes.fields["ros_topic"].string_value]
-        return [ros_topic]
+        return []
 
     # Handles attribute reconfiguration
-    def reconfigure(self, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]):
-        self.ros_topic = config.attributes.fields["ros_topic"].string_value
-
+    def reconfigure(
+        self, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]
+    ):
         self.ros_topic = config.attributes.fields["ros_topic"].string_value
         if self.ros_node is not None:
             if self.subscription is not None:
@@ -63,21 +68,39 @@ class RosLogger(ServiceBase, Reconfigurable):
             depth=1,
         )
 
+        # @TODO: This automatically logs to Viam through the logger. Not sure if/how this potentially affects logging to rosout in general as log messages weren't logged after removal of this line
+        self.ros_node.get_logger().error(f'My log message', throttle_duration_sec=1)
+
         self.subscription = self.ros_node.create_subscription(
-            Log, self.ros_topic, self.subscriber_callback, qos_profile=qos_policy
+            Log, "/rosout", self.subscriber_callback, qos_profile=qos_policy
         )
         self.lock = Lock()
 
-    def subscriber_callback(self, log) -> None:
-        self.logger.warning("LoggerService")
+    def subscriber_callback(self, log:Log) -> None:
+        # ROS Log Messages: http://docs.ros.org/en/api/rosgraph_msgs/html/msg/Log.html
+        if log.level == 1:
+            self.logger.debug(f'Topic: {self.ros_topic}, Node name: {log.name}, Message: {log.msg}, Level: {log.level}')
+        elif log.level == 2:
+            self.logger.info(f'Topic: {self.ros_topic}, Node name: {log.name}, Message: {log.msg}, Level: {log.level}')
+        elif log.level == 4:
+            self.logger.warn(f'Topic: {self.ros_topic}, Node name: {log.name}, Message: {log.msg}, Level: {log.level}')
+        elif log.level == 8:
+            self.logger.error(f'Topic: {self.ros_topic}, Node name: {log.name}, Message: {log.msg}, Level: {log.level}')
+        elif log.level == 16:
+            self.logger.critical(f'Topic: {self.ros_topic}, Node name: {log.name}, Message: {log.msg}, Level: {log.level}')
+        else:
+            self.logger.debug(f'UNDEFINED LOG LEVEL for entry: Topic: {self.ros_topic}, Node name: {log.name}, Message: {log.msg}, Level: {log.level}')
 
-    # Handles arbitrary commands to the Resource
-    async def do_command(
-        self,
-        command: Mapping[str, ValueTypes],
-        *,
-        timeout: Optional[float] = None,
-        **kwargs,
-    ):
-        raise NotImplementedError()
+
+    async def sum(self, nums: Sequence[float]) -> float:
+        if len(nums) <= 0:
+            raise ValueError("Must provided at least one number to sum")
+
+        result = 0
+        for num in nums:
+            if self.subtract:
+                result -= num
+            else:
+                result += num
+        return result
     
