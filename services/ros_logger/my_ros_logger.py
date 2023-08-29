@@ -68,9 +68,6 @@ class MyRosLoggerService(SummationService, Reconfigurable):
             depth=1,
         )
 
-        # @TODO: This automatically logs to Viam through the logger. Not sure if/how this potentially affects logging to rosout in general as log messages weren't logged after removal of this line
-        self.ros_node.get_logger().error(f'My log message', throttle_duration_sec=1)
-
         self.subscription = self.ros_node.create_subscription(
             Log, "/rosout", self.subscriber_callback, qos_profile=qos_policy
         )
