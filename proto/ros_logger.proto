@@ -7,7 +7,7 @@ import "google/api/annotations.proto";
 service ROSLoggerService {
   rpc Sum(SumRequest) returns (SumResponse) {
     option (google.api.http) = {
-      post: "/viamlabs/api/v1/service/ros_logger/{name}/status"
+      post: "/viamlabs/api/v1/service/ros_logger/{name}/sum"
     };
   }
 }
