@@ -95,3 +95,7 @@ class MyROS2LoggerService(ROS2LoggerService, Reconfigurable):
             self.logger.info(f"{message}")
         else:
             pass
+
+
+    async def status(self) -> dict:
+        return {"ros_topic": "self.ros_topic","log_level": "self.log_level"}

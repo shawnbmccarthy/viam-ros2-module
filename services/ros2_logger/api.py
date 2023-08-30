@@ -40,7 +40,7 @@ class ROS2LoggerService(ServiceBase):
     SUBTYPE: Final = Subtype("viamlabs", RESOURCE_TYPE_SERVICE, "ros2_logger")
     
     @abc.abstractmethod
-    async def status(self, nums: Sequence[float]) -> float:
+    async def status(self) -> Response:
         ...
 
 
@@ -55,7 +55,7 @@ class ROS2LoggerRPCService(ROS2LoggerServiceBase, ResourceRPCServiceBase):
         name = request.name
         service = self.get_resource(name)
         resp = await service.status()
-        await stream.send_message(Response(ros_topic=resp.ros_topic, log_level=resp.log_level))
+        await stream.send_message(resp)
 
 class ROS2LoggerClient(ROS2LoggerService):
     """Example gRPC client for the Summation Service"""
