@@ -18,13 +18,14 @@ from .api import SummationService
 
 class MyRosLoggerService(SummationService, Reconfigurable):
     """
-    A service which takes messages from the ROS topic configured under the service attributes as "ros_topic": with rosout or rosout_agg and logs them to Viam
+    A service which takes http://docs.ros.org/en/api/rosgraph_msgs/html/msg/Log.html messages from the configured ROS topic e.g. /rosout or /rosout_agg and logs them to Viam
     """
 
     MODEL: ClassVar[Model] = Model(ModelFamily("viamlabs", "ros2"), "ros_logger")
 
     # Instance variables
     ros_topic: str
+    log_level: str
     ros_node: ViamRosNode
     logger: logging.Logger
 
@@ -33,7 +34,9 @@ class MyRosLoggerService(SummationService, Reconfigurable):
 
     # Constructor
     @classmethod
-    def new(cls, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
+    def new(
+        cls, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]
+    ) -> Self:
         service = cls(config.name)
         service.ros_node = None
         service.logger = getLogger(f"{__name__}.{service.__class__.__name__}")
@@ -59,6 +62,8 @@ class MyRosLoggerService(SummationService, Reconfigurable):
         else:
             self.ros_node = ViamRosNode.get_viam_ros_node()
 
+        self.log_level = config.attributes.fields["log_level"].string_value
+
         qos_policy = rclpy.qos.QoSProfile(
             reliability=rclpy.qos.ReliabilityPolicy.BEST_EFFORT,
             history=rclpy.qos.HistoryPolicy.KEEP_LAST,
@@ -70,22 +75,28 @@ class MyRosLoggerService(SummationService, Reconfigurable):
         )
         self.lock = Lock()
 
-    def subscriber_callback(self, log:Log) -> None:
+    def subscriber_callback(self, ros_log: Log) -> None:
         # ROS Log Messages: http://docs.ros.org/en/api/rosgraph_msgs/html/msg/Log.html
-        if log.level == 1:
-            self.logger.debug(f'Topic: {self.ros_topic}, Node name: {log.name}, Message: {log.msg}, Level: {log.level}')
-        elif log.level == 2:
-            self.logger.info(f'Topic: {self.ros_topic}, Node name: {log.name}, Message: {log.msg}, Level: {log.level}')
-        elif log.level == 4:
-            self.logger.warn(f'Topic: {self.ros_topic}, Node name: {log.name}, Message: {log.msg}, Level: {log.level}')
-        elif log.level == 8:
-            self.logger.error(f'Topic: {self.ros_topic}, Node name: {log.name}, Message: {log.msg}, Level: {log.level}')
-        elif log.level == 16:
-            self.logger.critical(f'Topic: {self.ros_topic}, Node name: {log.name}, Message: {log.msg}, Level: {log.level}')
+
+        levels = {"debug": 1, "info": 2, "warn": 4, "error": 8, "critical": 16}
+        message = f"node name: {ros_log.name}, message: {ros_log.msg}, severity level: {str(ros_log.level)}"
+
+        if ros_log.level <= 1 and ros_log.level >= levels[self.log_level]:
+            self.logger.debug(message)
+        elif ros_log.level <= 2 and ros_log.level >= levels[self.log_level]:
+            self.logger.info(message)
+        elif ros_log.level <= 4 and ros_log.level >= levels[self.log_level]:
+            self.logger.warn(message)
+        elif ros_log.level <= 8 and ros_log.level >= levels[self.log_level]:
+            self.logger.error(message)
+        elif ros_log.level <= 16 and ros_log.level >= levels[self.log_level]:
+            self.logger.critical(message)
+        elif ros_log.level > 16:
+            self.logger.info(f"{message}")
         else:
-            self.logger.debug(f'UNDEFINED LOG LEVEL for entry: Topic: {self.ros_topic}, Node name: {log.name}, Message: {log.msg}, Level: {log.level}')
+            pass
 
-
+# @TODO: Remove
     async def sum(self, nums: Sequence[float]) -> float:
         if len(nums) <= 0:
             raise ValueError("Must provided at least one number to sum")
@@ -97,4 +108,3 @@ class MyRosLoggerService(SummationService, Reconfigurable):
             else:
                 result += num
         return result
-    
