@@ -14,9 +14,19 @@ Once the ROS2 Module is deployed, add the service part within services below to 
       "namespace": "viamlabs",
       "model": "viamlabs:ros2:ros2_logger",
       "attributes": {
-        "ros_topic": "/rosout",
+        "ros_topic": "/rosout_agg",
         "log_level": "error"
       }
     }
   ]
 ```
+
+## Publish Log Entry from Command Line
+Change the level according to your needs:
+debug = 1
+info  = 2
+warn  = 4
+error = 8
+critical = 16
+
+```ros2 topic pub -1 /rosout rcl_interfaces/msg/Log "{msg: 'Hello from terminal', level: 4}"```
