@@ -31,12 +31,17 @@ from viam.resource.types import RESOURCE_TYPE_SERVICE, Subtype
 from viam.services.service_base import ServiceBase
 
 from proto.ros2_logger_grpc import ROS2LoggerServiceBase, ROS2LoggerServiceStub
+from proto.ros2_logger_pb2 import Request, Response
 
 
 class ROS2LoggerService(ServiceBase):
     """Example service to use with the example module"""
 
     SUBTYPE: Final = Subtype("viamlabs", RESOURCE_TYPE_SERVICE, "ros2_logger")
+    
+    @abc.abstractmethod
+    async def status(self, nums: Sequence[float]) -> float:
+        ...
 
 
 class ROS2LoggerRPCService(ROS2LoggerServiceBase, ResourceRPCServiceBase):
@@ -44,6 +49,13 @@ class ROS2LoggerRPCService(ROS2LoggerServiceBase, ResourceRPCServiceBase):
 
     RESOURCE_TYPE = ROS2LoggerService
 
+    async def Status(self, stream: Stream[Request, Response]) -> None:
+        request = await stream.recv_message()
+        assert request is not None
+        name = request.name
+        service = self.get_resource(name)
+        resp = await service.status()
+        await stream.send_message(Response(ros_topic=resp.ros_topic, log_level=resp.log_level))
 
 class ROS2LoggerClient(ROS2LoggerService):
     """Example gRPC client for the Summation Service"""
