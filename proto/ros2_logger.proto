@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package viamlabs.service.ros2_logger.v1;
+
+import "google/api/annotations.proto";
+
+service ROS2LoggerService {
+}
+
+
