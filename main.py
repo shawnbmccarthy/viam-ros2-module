@@ -47,7 +47,6 @@ async def main(addr: str) -> None:
         m.add_model_from_registry(Camera.SUBTYPE, RosLidar.MODEL)
         m.add_model_from_registry(Sensor.SUBTYPE, RosSensor.MODEL)
         m.add_model_from_registry(Camera.SUBTYPE, RosCamera.MODEL)
-        m.add_model_from_registry(SummationService.SUBTYPE, MyRosLoggerService.MODEL)
         m.add_model_from_registry(ROS2LoggerService.SUBTYPE, MyROS2LoggerService.MODEL)
         await m.start()
     finally:
