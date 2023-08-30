@@ -15,6 +15,7 @@ service ROS2LoggerService {
 message Request {
     string name = 1;
 }
+
 message Response {
     string ros_topic = 1;
     string log_level = 2;

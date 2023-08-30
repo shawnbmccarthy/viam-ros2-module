@@ -5,19 +5,19 @@ It defines the abstract class definition that all concrete implementations must 
 the gRPC service that will handle calls to the service,
 and the gRPC client that will be able to make calls to this service.
 
-In this example, the ``Summation`` abstract class defines what functionality is required for all Summation services.
+In this example, the ``ROS2LoggerService`` abstract class defines what functionality is required for all ``ros2_logger`` services.
 It extends ``ServiceBase``, as all service types must.
 It also defines its specific ``SUBTYPE``, which is used internally to keep track of supported types.
 
-The ``SummationRPCService`` implements the gRPC service for the Summation service. This will allow other robots and clients to make
-requests of the Summation service. It extends both from ``SummationServiceBase`` and ``RPCServiceBase``.
+The ``ROS2LoggerRPCService`` implements the gRPC service for the ROS2LoggerService service. This will allow other robots and clients to make
+requests of the ROS2LoggerService service. It extends both from ``ROS2LoggerServiceBase`` and ``RPCServiceBase``.
 The former is the gRPC service as defined by the proto, and the latter is the class that all gRPC services must inherit from.
 
-Finally, the ``SummationClient`` is the gRPC client for a Summation service. It inherits from SummationService since it implements
- all the same functions. The implementations are simply gRPC calls to some remote Summation service.
+Finally, the ``ROS2LoggerClient`` is the gRPC client for a ROS2LoggerService service. It inherits from ROS2LoggerService since it implements
+ all the same functions. The implementations are simply gRPC calls to some remote ROS2LoggerService service.
 
 To see how this custom modular service is registered, see the __init__.py file.
-To see the custom implementation of this service, see the my_summation.py file.
+To see the custom implementation of this service, see the ros2_logger.py file.
 """
 
 import abc
@@ -35,17 +35,17 @@ from proto.ros2_logger_pb2 import Request, Response
 
 
 class ROS2LoggerService(ServiceBase):
-    """Example service to use with the example module"""
+    """Viam ROS 2 logger service subclass of the ServiceBase class including additional abstract methods to be implemented"""
 
     SUBTYPE: Final = Subtype("viamlabs", RESOURCE_TYPE_SERVICE, "ros2_logger")
-    
+
     @abc.abstractmethod
     async def status(self) -> Response:
         ...
 
 
 class ROS2LoggerRPCService(ROS2LoggerServiceBase, ResourceRPCServiceBase):
-    """Example gRPC service for the Summation service"""
+    """gRPC service for the ROS2LoggerService"""
 
     RESOURCE_TYPE = ROS2LoggerService
 
@@ -57,8 +57,9 @@ class ROS2LoggerRPCService(ROS2LoggerServiceBase, ResourceRPCServiceBase):
         resp = await service.status()
         await stream.send_message(resp)
 
+
 class ROS2LoggerClient(ROS2LoggerService):
-    """Example gRPC client for the Summation Service"""
+    """gRPC client for the ROS2LoggerService"""
 
     def __init__(self, name: str, channel: Channel) -> None:
         self.channel = channel
