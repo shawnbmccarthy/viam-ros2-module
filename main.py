@@ -12,10 +12,9 @@ from viam.components.movement_sensor import MovementSensor
 from viam.components.sensor import Sensor
 from viam.logging import getLogger
 from viam.module.module import Module
-from viam.services.service_base import ServiceBase
 
 from components import RosBase, RosCamera, RosImu, RosLidar, RosSensor, ViamRosNode
-from services.ros_logger import MyRosLoggerService, SummationService
+
 from services.ros2_logger import MyROS2LoggerService, ROS2LoggerService
 from utils import RclpyNodeManager
 
