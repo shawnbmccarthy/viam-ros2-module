@@ -24,8 +24,9 @@ class MyROS2LoggerService(ROS2LoggerService, Reconfigurable):
     MODEL: ClassVar[Model] = Model(ModelFamily("viamlabs", "ros2"), "ros2_logger")
 
     # Instance variables
-    ros_topic: str
-    log_level: str
+    ros_topic: str # ROS topic to subscribe to
+    log_level: str # Log levels: debug, info, warn, error, critical
+    levels = {"debug": 1, "info": 2, "warn": 4, "error": 8, "critical": 16}
     ros_node: ViamRosNode
     logger: logging.Logger
 
@@ -77,19 +78,17 @@ class MyROS2LoggerService(ROS2LoggerService, Reconfigurable):
 
     def subscriber_callback(self, ros_log: Log) -> None:
         # ROS Log Messages: http://docs.ros.org/en/api/rosgraph_msgs/html/msg/Log.html
-
-        levels = {"debug": 1, "info": 2, "warn": 4, "error": 8, "critical": 16}
         message = f"node name: {ros_log.name}, message: {ros_log.msg}, severity level: {str(ros_log.level)}"
 
-        if ros_log.level <= 1 and ros_log.level >= levels[self.log_level]:
+        if ros_log.level <= 1 and ros_log.level >= self.levels[self.log_level]:
             self.logger.debug(message)
-        elif ros_log.level <= 2 and ros_log.level >= levels[self.log_level]:
+        elif ros_log.level <= 2 and ros_log.level >= self.levels[self.log_level]:
             self.logger.info(message)
-        elif ros_log.level <= 4 and ros_log.level >= levels[self.log_level]:
+        elif ros_log.level <= 4 and ros_log.level >= self.levels[self.log_level]:
             self.logger.warn(message)
-        elif ros_log.level <= 8 and ros_log.level >= levels[self.log_level]:
+        elif ros_log.level <= 8 and ros_log.level >= self.levels[self.log_level]:
             self.logger.error(message)
-        elif ros_log.level <= 16 and ros_log.level >= levels[self.log_level]:
+        elif ros_log.level <= 16 and ros_log.level >= self.levels[self.log_level]:
             self.logger.critical(message)
         elif ros_log.level > 16:
             self.logger.info(f"{message}")
