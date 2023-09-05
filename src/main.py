@@ -16,7 +16,7 @@ from viam.module.module import Module
 from components import RosBase, RosCamera, RosImu, RosLidar, RosSensor, ViamRosNode
 
 from services.ros2_logger import MyROS2LoggerService, ROS2LoggerService
-from utils import RclpyNodeManager
+from utils.rclpy_utils import RclpyNodeManager
 
 logger = getLogger(__name__)
 
