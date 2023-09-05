@@ -1,0 +1,55 @@
+{
+  "network": {
+    "bind_address": ":8081"
+  },
+  "modules": [
+    {
+      "module_id": "felix-home-registry:viamlabs-ros2-integration",
+      "name": "ros2-integration",
+      "type": "registry",
+      "version": "0.0.20"
+    }
+  ],
+  "components": [
+    {
+      "model": "viamlabs:ros2:base",
+      "attributes": {
+        "ros_topic": "/cmd_vel",
+        "publish_rate": "0.2"
+      },
+      "depends_on": [],
+      "name": "rosbase",
+      "type": "base"
+    },
+    {
+      "name": "imu",
+      "type": "movement_sensor",
+      "model": "viamlabs:ros2:imu",
+      "attributes": {
+        "ros_topic": "/imu"
+      },
+      "depends_on": []
+    },
+    {
+      "model": "viamlabs:ros2:camera",
+      "attributes": {
+        "ros_topic": "/oakd/rgb/preview/image_raw"
+      },
+      "depends_on": [],
+      "name": "ros2_camera",
+      "type": "camera"
+    }
+  ],
+  "services": [
+    {
+      "model": "viamlabs:ros2:ros2_logger",
+      "attributes": {
+        "log_level": "info",
+        "ros_topic": "/rosout"
+      },
+      "name": "mylogger",
+      "type": "ros2_logger",
+      "namespace": "viamlabs"
+    }
+  ]
+}
