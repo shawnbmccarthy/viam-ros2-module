@@ -1,3 +1,3 @@
-viam-sdk==0.4.7
+viam-sdk==0.5.0
 numpy==1.25.2
 opencv-python==4.8.0.76
