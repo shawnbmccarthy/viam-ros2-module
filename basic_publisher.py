@@ -1,3 +1,6 @@
+"""
+simple test publisher to ensure ros is working
+"""
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist

@@ -1,4 +1,3 @@
-import sys
 import logging
 import rclpy
 import viam
@@ -19,6 +18,11 @@ from rclpy.node import Node
 from rclpy.subscription import Subscription
 from sensor_msgs.msg import Imu
 from .viam_ros_node import ViamRosNode
+
+
+class Unimplemented(Exception):
+    def __init__(self):
+        super().__init__()
 
 
 class RosImuProperties(MovementSensor.Properties):
@@ -83,7 +87,6 @@ class RosImu(MovementSensor, Reconfigurable):
         self.lock = Lock()
         self.msg = None
 
-
     def subscriber_callback(self, msg):
         with self.lock:
             self.msg = msg
@@ -96,7 +99,7 @@ class RosImu(MovementSensor, Reconfigurable):
         **kwargs
     ) -> Tuple[viam.components.movement_sensor.GeoPoint, float]:
         self.logger.warning('get_position: not implemented')
-        raise NotImplementedError()
+        raise Unimplemented()
 
     async def get_linear_velocity(
         self,
@@ -106,7 +109,7 @@ class RosImu(MovementSensor, Reconfigurable):
         **kwargs
     ) -> viam.components.movement_sensor.Vector3:
         self.logger.warning('get_linear_velocity: not implemented')
-        raise NotImplementedError()
+        raise Unimplemented()
 
     async def get_angular_velocity(
         self,
@@ -140,7 +143,7 @@ class RosImu(MovementSensor, Reconfigurable):
         **kwargs
     ) -> float:
         self.logger.warning(f'get_compass_heading: not implemented')
-        raise NotImplementedError()
+        raise Unimplemented()
 
     async def get_orientation(
         self,
@@ -161,9 +164,9 @@ class RosImu(MovementSensor, Reconfigurable):
         timeout: Optional[float] = None,
         **kwargs
     ) -> Mapping[str, float]:
-        raise NotImplementedError()
+        raise Unimplemented()
 
-    async def get_properties(self, *, timeout: Optional[float] = None, **kwargs):
+    async def get_properties(self, *, timeout: Optional[float] = None, **kwargs) -> MovementSensor.Properties:
         return self.props
 
     async def do_command(
@@ -173,9 +176,8 @@ class RosImu(MovementSensor, Reconfigurable):
             timeout: Optional[float] = None,
             **kwargs
     ):
-        raise NotImplementedError()
+        raise Unimplemented()
         
-
 
 Registry.register_resource_creator(
     MovementSensor.SUBTYPE,

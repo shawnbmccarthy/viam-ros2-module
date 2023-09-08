@@ -1,25 +1,9 @@
-import sys
+"""
+simple test to ensure libviam_rust_utils is working properly
+"""
 import ctypes
-import logging
-import rclpy
-import viam
 from ctypes import Structure, POINTER, c_double
-from threading import Lock, Thread
-from utils import RclpyNodeManager
-from viam.logging import getLogger
-from typing import Any, ClassVar, Dict, Mapping, Optional, Sequence, Tuple
-from typing_extensions import Self
 from viam.components.movement_sensor import MovementSensor, Orientation, Vector3
-from viam.module.types import Reconfigurable
-from viam.proto.app.robot import ComponentConfig
-from viam.proto.common import ResourceName
-from viam.resource.base import ResourceBase
-from viam.resource.registry import Registry, ResourceCreatorRegistration
-from viam.resource.types import Model, ModelFamily
-from viam.utils import ValueTypes
-from rclpy.node import Node
-from sensor_msgs.msg import Imu
-from geometry_msgs.msg import Quaternion
 
 lib = ctypes.cdll.LoadLibrary("libviam_rust_utils.so")
 

@@ -3,7 +3,6 @@
 # and add any environment variables needed to our run.sh
 # script
 #
-
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 #sudo apt install python3-pip

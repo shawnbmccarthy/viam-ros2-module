@@ -1,3 +1,8 @@
+"""
+ros_lidar.py
+
+ROS produces LaserScan messages for lidar data
+"""
 import logging
 import math
 import numpy as np

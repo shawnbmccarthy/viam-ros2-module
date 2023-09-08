@@ -1,6 +1,9 @@
 #!/bin/bash
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+export VIAM_ROS_NODE_NAME=
+export ROS_NAMESPACE=
+
 # export underlay & add overlays as needed
 . /etc/turtlebot4/setup.bash
 . /opt/ros/humble/setup.bash
