@@ -1,6 +1,9 @@
 # viam-ros2-module
 
-This is a simple viam-ros integration which has been tested with ROS2 Humble turtlebots.
+This is a simple viam-ros integration which has been tested with ROS2 Humble turtlebot4 & turtlebot4-lite
+
+## Overview
+
 
 ## How To Use
 1. Install Viam on ROS2 Humble robot

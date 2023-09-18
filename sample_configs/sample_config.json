@@ -1,18 +1,7 @@
 {
-  "modules": [
-    {
-      "type": "local",
-      "name": "ros2",
-      "executable_path": "/home/ubuntu/viam-ros2-module/run.sh"
-    },
-    {
-      "executable_path": "/usr/local/bin/cartographer-module",
-      "type": "local",
-      "name": "cartographer-module"
-    }
-  ],
   "services": [
     {
+      "name": "slam",
       "type": "slam",
       "model": "viam:slam:cartographer",
       "attributes": {
@@ -23,70 +12,146 @@
         "sensors": [
           "lidar"
         ]
-      },
-      "name": "slam"
+      }
     },
     {
       "name": "datacapture",
       "type": "data_manager",
       "attributes": {
-        "capture_dir": "",
         "tags": [
           "ros2"
         ],
         "additional_sync_paths": [
           "/opt/rosbags"
         ],
-        "sync_interval_mins": 5
+        "sync_interval_mins": 5,
+        "capture_dir": ""
       }
     },
     {
-      "type": "shell",
       "attributes": {},
-      "name": "shell"
+      "name": "shell",
+      "type": "shell"
     }
   ],
   "components": [
     {
-      "name": "rosbase",
-      "type": "base",
       "model": "viamlabs:ros2:base",
       "attributes": {
-        "ros_topic": "/cmd_vel",
+        "ros_topic": "/tb4lite/cmd_vel",
         "publish_rate": "0.2"
+      },
+      "depends_on": [],
+      "name": "rosbase",
+      "type": "base"
+    },
+    {
+      "attributes": {
+        "ros_topic": "/tb4lite/imu"
+      },
+      "depends_on": [],
+      "name": "imu",
+      "type": "movement_sensor",
+      "model": "viamlabs:ros2:imu"
+    },
+    {
+      "name": "lidar",
+      "type": "camera",
+      "model": "viamlabs:ros2:lidar",
+      "attributes": {
+        "ros_topic": "/tb4lite/scan"
+      },
+      "depends_on": []
+    },
+    {
+      "model": "viamlabs:ros2:sensor",
+      "attributes": {
+        "ros_msg_package": "irobot_create_msgs.msg",
+        "ros_msg_type": "HazardDetectionVector",
+        "ros_topic": "/tb4lite/hazard_detection"
+      },
+      "depends_on": [],
+      "name": "hazard_detection",
+      "type": "sensor"
+    },
+    {
+      "model": "viamlabs:ros2:sensor",
+      "attributes": {
+        "ros_topic": "/tb4lite/battery_state",
+        "ros_msg_package": "sensor_msgs.msg",
+        "ros_msg_type": "BatteryState"
+      },
+      "depends_on": [],
+      "name": "battery_state",
+      "type": "sensor"
+    },
+    {
+      "name": "dock_status",
+      "type": "sensor",
+      "model": "viamlabs:ros2:sensor",
+      "attributes": {
+        "ros_msg_package": "irobot_create_msgs.msg",
+        "ros_msg_type": "DockStatus",
+        "ros_topic": "/tb4lite/dock_status"
+      },
+      "depends_on": []
+    },
+    {
+      "model": "viamlabs:ros2:sensor",
+      "attributes": {
+        "ros_topic": "/tb4lite/joint_states",
+        "ros_msg_package": "sensor_msgs.msg",
+        "ros_msg_type": "JointState"
+      },
+      "depends_on": [],
+      "name": "joint_states",
+      "type": "sensor"
+    },
+    {
+      "attributes": {
+        "ros_topic": "/tb4lite/robot_description",
+        "ros_msg_package": "std_msgs.msg",
+        "ros_msg_type": "String"
+      },
+      "depends_on": [],
+      "name": "robot_description",
+      "type": "sensor",
+      "model": "viamlabs:ros2:sensor"
+    },
+    {
+      "name": "wheel_status",
+      "type": "sensor",
+      "model": "viamlabs:ros2:sensor",
+      "attributes": {
+        "ros_msg_type": "WheelStatus",
+        "ros_topic": "/tb4lite/wheel_status",
+        "ros_msg_package": "irobot_create_msgs.msg"
       },
       "depends_on": []
     },
     {
       "depends_on": [],
-      "name": "imu",
-      "type": "movement_sensor",
-      "model": "viamlabs:ros2:imu",
+      "name": "camera",
+      "type": "camera",
+      "model": "viamlabs:ros2:camera",
       "attributes": {
-        "ros_topic": "/imu"
-      }
-    },
-    {
-      "model": "viamlabs:ros2:lidar",
-      "attributes": {
-        "ros_topic": "/scan"
-      },
-      "depends_on": [],
-      "name": "lidar",
-      "type": "camera"
-    },
-    {
-      "depends_on": [],
-      "name": "sensor",
-      "type": "sensor",
-      "model": "viamlabs:ros2:sensor",
-      "attributes": {
-        "ros_msg_type": "HazardDetectionVector",
-        "ros_topic": "/hazard_detection"
+        "ros_topic": "/tb4lite/oakd/rgb/preview/image_raw"
       }
     }
   ],
   "network": {
     "bind_address": ":9090"
-  }
+  },
+  "modules": [
+    {
+      "type": "local",
+      "name": "ros2",
+      "executable_path": "/home/ubuntu/viam-ros2-module/run.sh"
+    },
+    {
+      "name": "cartographer-module",
+      "executable_path": "/usr/local/bin/cartographer-module",
+      "type": "local"
+    }
+  ]
 }

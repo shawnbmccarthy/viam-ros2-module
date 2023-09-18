@@ -2,7 +2,6 @@
 
 # TODO: handler does not seem to execute properly
 import asyncio
-import os
 import signal
 import sys
 
@@ -22,6 +21,13 @@ viam_node = None
 
 
 def sigterm_handler(_signo, _stack_frame):
+    """
+    might not be needed
+
+    :param _signo:
+    :param _stack_frame:
+    :return:
+    """
     logger.info('attempting rclpy shutdown')
     sys.exit(0)
 

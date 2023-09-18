@@ -57,7 +57,6 @@ class RosBase(Base, Reconfigurable):
     def ros_publisher_cb(self):
         self.publisher.publish(self.twist_msg)
 
-
     def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
         self.ros_topic = config.attributes.fields['ros_topic'].string_value
         self.publish_rate = float(config.attributes.fields['publish_rate'].string_value)
