@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package viamlabs.service.ros2_logger.v1;
+
+import "google/api/annotations.proto";
+
+service ROS2LoggerService {
+    rpc Status (Request) returns (Response) {
+        option (google.api.http) = {
+            post: "/viamlabs/api/v1/service/ros2_logger/{name}/status"
+          };
+    }
+}
+
+message Request {
+    string name = 1;
+}
+
+message Response {
+    string ros_topic = 1;
+    string log_level = 2;
+}

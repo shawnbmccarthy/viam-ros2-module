@@ -39,6 +39,7 @@ class RosCamera(Camera, Reconfigurable):
     ) -> Self:
         camera = cls(config.name)
         camera.ros_node = None
+        camera.image = None
         camera.logger = getLogger(f"{__name__}.{camera.__class__.__name__}")
         camera.props = Camera.Properties(
             supports_pcd=False,
