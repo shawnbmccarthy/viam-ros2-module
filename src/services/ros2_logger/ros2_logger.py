@@ -85,7 +85,7 @@ class MyROS2LoggerService(ROS2LoggerService, Reconfigurable):
         elif ros_log.level <= 20 and ros_log.level >= self.levels[self.log_level]:
             self.logger.info(message)
         elif ros_log.level <= 30 and ros_log.level >= self.levels[self.log_level]:
-            self.logger.warn(message)
+            self.logger.warning(message)
         elif ros_log.level <= 40 and ros_log.level >= self.levels[self.log_level]:
             self.logger.error(message)
         elif ros_log.level <= 50 and ros_log.level >= self.levels[self.log_level]:
