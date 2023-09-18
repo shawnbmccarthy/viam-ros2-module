@@ -18,7 +18,7 @@ from .api import ROS2LoggerService
 
 class MyROS2LoggerService(ROS2LoggerService, Reconfigurable):
     """
-    A service which takes http://docs.ros.org/en/api/rosgraph_msgs/html/msg/Log.html messages from the configured ROS topic e.g. /rosout or /rosout_agg and logs them to Viam
+    A service which takes https://docs.ros2.org/foxy/api/rcl_interfaces/msg/Log.html messages from the configured ROS topic e.g. /rosout or /rosout_agg and logs them to Viam
     """
 
     MODEL: ClassVar[Model] = Model(ModelFamily("viamlabs", "ros2"), "ros2_logger")
@@ -26,7 +26,7 @@ class MyROS2LoggerService(ROS2LoggerService, Reconfigurable):
     # Instance variables
     ros_topic: str # ROS topic to subscribe to
     log_level: str # Log levels: debug, info, warn, error, critical
-    levels = {"debug": 1, "info": 2, "warn": 4, "error": 8, "critical": 16}
+    levels = {"debug": 10, "info": 20, "warn": 30, "error": 40, "critical": 50}
     ros_node: ViamRosNode
     logger: logging.Logger
 
@@ -77,20 +77,20 @@ class MyROS2LoggerService(ROS2LoggerService, Reconfigurable):
         self.lock = Lock()
 
     def subscriber_callback(self, ros_log: Log) -> None:
-        # ROS Log Messages: http://docs.ros.org/en/api/rosgraph_msgs/html/msg/Log.html
+        # ROS Log Messages: https://docs.ros2.org/foxy/api/rcl_interfaces/msg/Log.html
         message = f"node name: {ros_log.name}, message: {ros_log.msg}, severity level: {str(ros_log.level)}"
 
-        if ros_log.level <= 1 and ros_log.level >= self.levels[self.log_level]:
+        if ros_log.level <= 10 and ros_log.level >= self.levels[self.log_level]:
             self.logger.debug(message)
-        elif ros_log.level <= 2 and ros_log.level >= self.levels[self.log_level]:
+        elif ros_log.level <= 20 and ros_log.level >= self.levels[self.log_level]:
             self.logger.info(message)
-        elif ros_log.level <= 4 and ros_log.level >= self.levels[self.log_level]:
+        elif ros_log.level <= 30 and ros_log.level >= self.levels[self.log_level]:
             self.logger.warn(message)
-        elif ros_log.level <= 8 and ros_log.level >= self.levels[self.log_level]:
+        elif ros_log.level <= 40 and ros_log.level >= self.levels[self.log_level]:
             self.logger.error(message)
-        elif ros_log.level <= 16 and ros_log.level >= self.levels[self.log_level]:
+        elif ros_log.level <= 50 and ros_log.level >= self.levels[self.log_level]:
             self.logger.critical(message)
-        elif ros_log.level > 16:
+        elif ros_log.level > 50:
             self.logger.info(f"{message}")
         else:
             pass
