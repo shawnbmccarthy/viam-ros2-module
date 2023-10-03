@@ -58,7 +58,7 @@ nav2-simple-commander==1.0.0
 numpy==1.25.2
 opencv-python==4.8.0.76
 osrf-pycommon==2.0.2
-Pillow==10.0.0
+Pillow==10.0.1
 protobuf==4.24.0
 PyYAML==6.0.1
 rcl-interfaces==1.2.1
