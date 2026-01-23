@@ -59,7 +59,7 @@ numpy==1.25.2
 opencv-python==4.8.0.76
 osrf-pycommon==2.0.2
 Pillow==10.0.1
-protobuf==4.24.0
+protobuf==7.34.0rc1
 PyYAML==6.0.1
 rcl-interfaces==1.2.1
 rclpy==3.3.9
